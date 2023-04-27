@@ -1,8 +1,8 @@
 # DeFi-Locker-SmartContract
 
 <h2> An Defi simaple smart-contract</h2>
----
->Lock your tokens with a few lines
+
+> Lock your tokens with a few lines
 
 <details>
 <summary>What functions or varibale includes?</summary>
