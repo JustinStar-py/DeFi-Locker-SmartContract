@@ -4,7 +4,7 @@
 
 > Written by solidity 8.17.0v / with license
 
-
+---
 
 <details>
 <summary>What functions or varibale includes?</summary>
