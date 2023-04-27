@@ -1,62 +1,37 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/release-v4.3/contracts/access/OwnableUpgradeable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
 
-contract TokenLock {
-  ERC20 public token;
+contract Token is ERC20 {
+  IERC20 public token;
   uint256 public depositDeadline;
   uint256 public lockDuration;
 
-  /// Withdraw amount exceeds sender's balance of the locked token
-  error ExceedsBalance();
-  /// Deposit is not possible anymore because the deposit period is over
-  error DepositPeriodOver();
-  /// Withdraw is not possible because the lock period is not over yet
-  error LockPeriodOngoing();
-  /// Could not transfer the designated ERC20 token
-  error TransferFailed();
-  /// ERC-20 function is not supported
-  error NotSupported();
+  constructor() ERC20("Timelock Token Demo", "TTD") {
+        _mint(msg.sender, 1000000 * 10 ** 18);
+  }
+}
 
-  struct lockInfo {
-    address _owner;
-    address _token;
-    uint256 _depositDeadline;
-    uint256 _lockDuration;
-    string _name;
-    string _symbol;
+contract TimelockDemo {
+
+  uint public constant lockDuration = 60*3;
+  uint public immutable endLocking;
+  address public immutable owner;
+
+  constructor() {
+    owner = msg.sender;
+    endLocking = block.timestamp + lockDuration;
   }
 
-  /// @dev Deposit tokens to be locked until the end of the locking period
-  /// @param amount The amount of tokens to deposit
-  function deposit(uint256 amount) public {
-    if (block.timestamp > depositDeadline) {
-      revert DepositPeriodOver();
-    }
+  modifier blockWithdraw() {
+    require(block.timestamp >= endLocking, "You can't withdraw amount before 3 min.");
+    _;
+  } 
 
-    require(token.transferFrom(msg.sender, address(this), amount), "transferFailed");
+  function withdraw(address token, uint amount) external blockWithdraw {
+    IERC20(token).transfer(owner, amount);
   }
-
-  /// @dev Withdraw tokens after the end of the locking period or during the deposit period
-  /// @param amount The amount of tokens to withdraw
-  function withdraw(uint256 amount) public {
-    if (
-      block.timestamp > depositDeadline &&
-      block.timestamp < depositDeadline + lockDuration
-    ) {
-      revert LockPeriodOngoing();
-    }
-    // if (balanceOf[msg.sender] < amount) {
-    //   revert ExceedsBalance();
-    // }
-
-    if (!token.transfer(msg.sender, amount)) {
-      revert TransferFailed();
-    }
-
-  }
-
 }
