@@ -53,14 +53,14 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
         totalLocks.push(lock);
     }
 
-    function withdraw(uint256 _id) external {
+    function withdraw(uint256 _id) external returns (bool transfer) {
         require(ownerLocks[msg.sender].length > 0, "You haven't made any lock");
         require(totalLocks[_id].unlockTime >= block.timestamp, "Please wait to unlock your tokens.");
         require(!totalLocks[_id].withdrawn, "You have withdrawn before.");
 
         Item memory lock = totalLocks[_id];
-        IERC20(lock.tokenAddress).transfer(msg.sender, lock.tokenAmount);
-        totalLocks[_id].withdrawn = true;
+        transfer = IERC20(lock.tokenAddress).transfer(msg.sender, lock.tokenAmount);
+        totalLocks[_id].withdrawn = transfer;
     }
 
     function payTo(address _to, uint256 _amount) internal returns (bool) {
