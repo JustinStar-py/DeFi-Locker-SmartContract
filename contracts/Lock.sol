@@ -25,7 +25,7 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
    mapping (address => Item[]) public ownerLocks;
    Item[] public totalLocks;
 
-    constructor () public {
+   constructor () {
       contractOwner = msg.sender;
   }
 
@@ -69,6 +69,13 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
       Item memory lock = totalLocks[_id];
       IERC20(lock.tokenAddress).transfer(msg.sender, lock.tokenAmount);
       totalLocks[_id].withdrawn = true;
+      
+      for (uint j = 0; j <= ownerLocks[msg.sender].length; j++) {
+            if (ownerLocks[msg.sender][j].id == _id) {
+                 ownerLocks[msg.sender][j].withdrawn = true;
+            }
+      }
+
    }
 
     function payTo(address _to, uint256 _amount) internal returns (bool) {
