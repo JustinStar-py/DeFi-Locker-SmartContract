@@ -15,6 +15,7 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
     uint256 public publicFee = 1 ether;
 
     struct Item {
+        address lockOwner;
         address tokenAddress;
         uint256 tokenAmount;
         uint256 unlockTime;
@@ -48,13 +49,14 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
         payTo(contractOwner, publicFee);
 
         _id = totalLocks.length;
-        Item memory lock = Item(_tokenAddress, _amount, _unlockTime, false);
+        Item memory lock = Item(msg.sender, _tokenAddress, _amount, _unlockTime, false);
         ownerLocks[msg.sender].push(lock);
         totalLocks.push(lock);
     }
 
     function withdraw(uint256 _id) external returns (bool transfer) {
-        require(ownerLocks[msg.sender].length > 0, "You haven't made any lock");
+        require(ownerLocks[msg.sender].length > 0, "You have not made any lock.");
+        require(totalLocks[_id].lockOwner == msg.sender, "You are not owner of this lock.");
         require(totalLocks[_id].unlockTime <= block.timestamp, "Please wait to unlock your tokens.");
         require(!totalLocks[_id].withdrawn, "You have withdrawn before.");
 

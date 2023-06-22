@@ -8,7 +8,8 @@ const hre = require("hardhat");
 
 async function main() {
 
-  const lock = await hre.ethers.deployContract("TimelockDemo")
+  // const lock = await hre.ethers.deployContract("TimelockDemo")
+  const lock = await hre.ethers.deployContract("Token")
   await lock.waitForDeployment();
 
   console.log("Contract Deployed:", await lock.getAddress());
