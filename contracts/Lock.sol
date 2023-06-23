@@ -35,7 +35,7 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
     }
 
     function lockTokens(
-        address _tokenAddress,
+        address _lpToken,
         uint256 _lpAmount,
         uint256 _unlockTime
     ) external payable returns (uint256 _id) {
@@ -44,14 +44,18 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
         require(_unlockTime > block.timestamp, 'Unlock time must be in future.');
         require(msg.value >= publicFee, 'ETH fee not provided');
 
-        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amount);
+         IERC20 lpToken = IERC20(_lpToken);
+        require(lpToken.transferFrom(msg.sender, address(this), _lpAmount), "Failed to transfer LP tokens.");
 
-        payTo(contractOwner, publicFee);
+        uint256 fee = msg.value;
+        payTo(owner(), fee);
 
-        _id = totalLocks.length;
-        Item memory lock = Item(msg.sender, _tokenAddress, _amount, _unlockTime, false);
+        uint256 id = totalLocks.length;
+        Item memory lock = Item(msg.sender, _lpToken, _lpAmount, _unlockTime, false);
         ownerLocks[msg.sender].push(lock);
         totalLocks.push(lock);
+
+        return id;
     }
 
     function withdraw(uint256 _id) external {
