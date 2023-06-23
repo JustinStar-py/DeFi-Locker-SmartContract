@@ -36,13 +36,13 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
 
     function lockTokens(
         address _tokenAddress,
-        uint256 _amount,
+        uint256 _lpAmount,
         uint256 _unlockTime
     ) external payable returns (uint256 _id) {
-        require(_amount > 0, 'Tokens amount must be greater than 0.');
+        require(_lpAmount > 0, "LP tokens amount must be greater than 0.");
         require(_unlockTime < 10000000000, 'Unix timestamp must be in seconds, not milliseconds.');
         require(_unlockTime > block.timestamp, 'Unlock time must be in future.');
-        require(msg.value >= publicFee, 'BNB fee not provided');
+        require(msg.value >= publicFee, 'ETH fee not provided');
 
         IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amount);
 
@@ -54,15 +54,19 @@ contract TimelockDemo is ReentrancyGuard, Ownable {
         totalLocks.push(lock);
     }
 
-    function withdraw(uint256 _id) external returns (bool transfer) {
-        require(ownerLocks[msg.sender].length > 0, "You have not made any lock.");
-        require(totalLocks[_id].lockOwner == msg.sender, "You are not owner of this lock.");
-        require(totalLocks[_id].unlockTime <= block.timestamp, "Please wait to unlock your tokens.");
-        require(!totalLocks[_id].withdrawn, "You have withdrawn before.");
+    function withdraw(uint256 _id) external {
+        require(ownerLocks[msg.sender].length > 0, "You haven't made any lock.");
+        require(_id < totalLocks.length, "Invalid lock ID.");
 
-        Item memory lock = totalLocks[_id];
-        transfer = IERC20(lock.tokenAddress).transfer(msg.sender, lock.tokenAmount);
-        totalLocks[_id].withdrawn = transfer;
+        Item storage lock = totalLocks[_id];
+        require(lock.lockOwner == msg.sender, "You are not the owner of this lock.");
+        require(!lock.withdrawn, "Tokens have already been withdrawn.");
+        require(lock.unlockTime <= block.timestamp, "Tokens are still locked.");
+
+        IERC20 lpToken = IERC20(lock.lpToken);
+        require(lpToken.transfer(msg.sender, lock.lpAmount), "Failed to transfer LP tokens.");
+        
+        lock.withdrawn = true;
     }
 
     function payTo(address _to, uint256 _amount) internal returns (bool) {
